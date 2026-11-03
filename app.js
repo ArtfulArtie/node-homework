@@ -1,6 +1,8 @@
 const express = require("express");
 const timeRouter = require("./routes/timeRoutes");
 const userRouter = require("./routes/userRoutes");
+const taskRouter = require("./routes/taskRoutes");
+const authMiddleware = require("./middleware/auth");
 const notFound = require("./middleware/not-found");
 const errorHandler = require("./middleware/error-handler");
 
@@ -17,8 +19,11 @@ app.use(express.json());
 // Existing time routes.
 app.use("/api", timeRouter);
 
-// User routes.
+// Public user routes.
 app.use("/api/users", userRouter);
+
+// Protected task routes.
+app.use("/api/tasks", authMiddleware, taskRouter);
 
 app.get("/", (req, res) => {
   res.send("Hello, World!");
