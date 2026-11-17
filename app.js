@@ -1,6 +1,6 @@
 
 const express = require("express");
-const pool = require("./db/pg-pool");
+const prisma = require("./db/prisma");
 const timeRouter = require("./routes/timeRoutes");
 const userRouter = require("./routes/userRoutes");
 const taskRouter = require("./routes/taskRoutes");
@@ -16,10 +16,10 @@ global.user_id = null;
 // Parse JSON request bodies before routes.
 app.use(express.json());
 
-// Database health check.
+// Database health check using Prisma.
 app.get("/health", async (req, res) => {
   try {
-    await pool.query("SELECT 1");
+    await prisma.$queryRaw`SELECT 1`;
     res.status(200).json({
       status: "ok",
       db: "connected",
@@ -27,7 +27,7 @@ app.get("/health", async (req, res) => {
   } catch (error) {
     res.status(500).json({
       status: "error",
-      db: "disconnected",
+      db: "not connected",
       error: error.message,
     });
   }
@@ -60,7 +60,7 @@ const server = app.listen(port, () => {
   console.log(`Server is listening on port ${port}...`);
 });
 
-// Gracefully shut down the server and database connection pool.
+// Gracefully shut down the server and database connections.
 let isShuttingDown = false;
 
 async function shutdown(code = 0) {
@@ -76,10 +76,10 @@ async function shutdown(code = 0) {
     }
 
     try {
-      await pool.end();
-      console.log("Database connection pool closed.");
-    } catch (poolError) {
-      console.error("Error closing database pool:", poolError);
+      await prisma.$disconnect();
+      console.log("Prisma disconnected");
+    } catch (prismaError) {
+      console.error("Error disconnecting Prisma:", prismaError);
       code = 1;
     }
 
